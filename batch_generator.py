@@ -4,11 +4,16 @@ import numpy as np
 from skimage import io, img_as_float
 from torch.utils.data import Dataset
 from skimage.transform import resize
+from skimage.color import gray2rgb
 
 def remove_center_area(img,area_size=(30, 30)):
     h, w = img.shape[:2]
     corupted_img = img.copy()
-    corupted_img[h // 2 - area_size[0] // 2:h // 2 + area_size[0] // 2,w // 2 - area_size[1] // 2:w // 2 + area_size[1] // 2, :] = 0
+    try:
+        corupted_img[h // 2 - area_size[0] // 2:h // 2 + area_size[0] // 2,w // 2 - area_size[1] // 2:w // 2 + area_size[1] // 2, :] = 0
+    except:
+        print("ALERT")
+        print(corupted_img.shape)
     return corupted_img
     
 
@@ -34,6 +39,8 @@ class BatchGenerator(Dataset):
                 idx += 1
                 img_name = self.filenames[idx]
         h, w = image.shape[:2]
+        if len(image.shape) != 3:
+            image = gray2rgb(image)
         area_size = (np.random.randint(h // 2), np.random.randint(w // 2))
         corrupted_image = remove_center_area(image, area_size)
         mask = np.zeros((h, w))
@@ -42,4 +49,4 @@ class BatchGenerator(Dataset):
         mask = resize(mask, (32, 32))
        
 
-        return image, corrupted_image, mask
+        return corrupted_image, image, mask
